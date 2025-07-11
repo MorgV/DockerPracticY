@@ -20,14 +20,15 @@ jobs:
         id: version
         run: echo "VERSION=${{ github.run_number }}" >> $GITHUB_ENV
 
-      - name: Docker Login to Yandex
-        run: echo ${{ secrets.YA_REGISTRY_TOKEN }} | docker login -u oauth --password-stdin cr.yandex
-
       - name: Setup Docker
         uses: docker/setup-buildx-action@v3
 
       - name: Docker Login to Yandex
-        run: echo ${{ secrets.YA_REGISTRY_TOKEN }} | docker login -u oauth --password-stdin cr.yandex
+        run: |
+          echo "${YA_REGISTRY_TOKEN}" | docker login -u oauth --password-stdin cr.yandex
+        env:
+          YA_REGISTRY_TOKEN: ${{ secrets.YA_REGISTRY_TOKEN }}
+        shell: bash
 
       - name: Build Docker Image
         run: |
@@ -62,4 +63,8 @@ jobs:
             });
 
       - name: Update Changelog
-        run: echo -e "## v${{ env.VERSION }}\n- Release commit\n\n$(cat CHANGELOG.md)" > CHANGELOG.md && git add CHANGELOG.md && git commit -m "update changelog" && git push
+        run: |
+          echo -e "## v${{ env.VERSION }}\n- Release commit\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
+          git add CHANGELOG.md
+          git commit -m "update changelog"
+          git push
