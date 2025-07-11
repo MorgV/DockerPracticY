@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version'
+        description: "Release version"
         required: true
 
 jobs:
@@ -18,6 +18,6 @@ jobs:
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
-            docker pull cr.yandex/<registry-id>/app:${{ github.event.inputs.version }}_latest
+            docker pull cr.yandex/crp7c6dnjn6sbflchmsn/app:${{ github.event.inputs.version }}_latest
             docker stop app || true && docker rm app || true
-            docker run -d -p 80:3000 --name app cr.yandex/<registry-id>/app:${{ github.event.inputs.version }}_latest
+            docker run -d -p 80:3000 --name app cr.yandex/crp7c6dnjn6sbflchmsn/app:${{ github.event.inputs.version }}_latest

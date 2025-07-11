@@ -7,7 +7,7 @@ permissions:
   contents: write
 
 env:
-  REGISTRY: cr.yandex/<твой-registry-id>
+  REGISTRY: cr.yandex/crp7c6dnjn6sbflchmsn
   IMAGE_NAME: app
 
 jobs:

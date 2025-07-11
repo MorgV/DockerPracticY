@@ -1,0 +1,94 @@
+name: Fix Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: "Release version (e.g., 15)"
+        required: true
+
+permissions:
+  contents: write
+  issues: write
+
+env:
+  REGISTRY: cr.yandex/<твой-registry-id>
+  IMAGE_NAME: app
+
+jobs:
+  fix-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # нужен полный git log
+
+      - name: Set fix version
+        id: fix_version
+        run: |
+          FIX_VERSION=${{ github.event.inputs.release_version }}_fix${{ github.run_number }}
+          echo "FIX_VERSION=$FIX_VERSION" >> $GITHUB_ENV
+
+      - name: Setup Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker Login to Yandex
+        run: echo ${{ secrets.YA_REGISTRY_TOKEN }} | docker login -u oauth --password-stdin cr.yandex
+
+      - name: Prepare release branch
+        run: |
+          git fetch
+          if git rev-parse --verify origin/releases/${{ github.event.inputs.release_version }} >/dev/null 2>&1; then
+            git checkout releases/${{ github.event.inputs.release_version }}
+          else
+            git checkout -b releases/${{ github.event.inputs.release_version }}
+            git push origin releases/${{ github.event.inputs.release_version }}
+          fi
+
+      - name: Run type check and tests
+        run: |
+          npm ci
+          npm run lint
+          npm run test
+
+      - name: Build Docker image
+        run: |
+          docker build -t $REGISTRY/$IMAGE_NAME:${{ env.FIX_VERSION }} .
+          docker tag $REGISTRY/$IMAGE_NAME:${{ env.FIX_VERSION }} $REGISTRY/$IMAGE_NAME:${{ github.event.inputs.release_version }}_latest
+
+      - name: Push Docker image
+        run: |
+          docker push $REGISTRY/$IMAGE_NAME:${{ env.FIX_VERSION }}
+          docker push $REGISTRY/$IMAGE_NAME:${{ github.event.inputs.release_version }}_latest
+
+      - name: Tag Fix Version
+        run: |
+          git tag v${{ env.FIX_VERSION }}
+          git push origin v${{ env.FIX_VERSION }}
+
+      - name: Comment in GitHub Issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const releaseVersion = '${{ github.event.inputs.release_version }}';
+            const fixVersion = '${{ env.FIX_VERSION }}';
+            const issueTitle = `Release ${releaseVersion}`;
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open"
+            });
+            const issue = issues.data.find(i => i.title === issueTitle);
+            if (issue) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `🛠 Фикс выкатки\nДата: ${new Date().toISOString()}\nВерсия: ${fixVersion}\nОбраз: cr.yandex/${{ env.REGISTRY }}/app:${fixVersion}`
+              });
+            } else {
+              core.warning("Issue not found for this release version");
+            }

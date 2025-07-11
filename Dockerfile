@@ -27,6 +27,9 @@ COPY --from=builder /app/package.json ./
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 
+# 9.1 Исправляем структуру для запуска
+RUN cp -r dist/server/server/* dist/server/
+
 # 10. Указываем порт
 EXPOSE 3000
 
