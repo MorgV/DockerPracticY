@@ -20,6 +20,9 @@ jobs:
         id: version
         run: echo "VERSION=${{ github.run_number }}" >> $GITHUB_ENV
 
+      - name: Docker Login to Yandex
+        run: echo ${{ secrets.YA_REGISTRY_TOKEN }} | docker login -u oauth --password-stdin cr.yandex
+
       - name: Setup Docker
         uses: docker/setup-buildx-action@v3
 
