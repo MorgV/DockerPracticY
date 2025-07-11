@@ -23,6 +23,9 @@ jobs:
       - name: Setup Docker
         uses: docker/setup-buildx-action@v3
 
+      - name: Debug token
+        run: echo "${{ secrets.YA_REGISTRY_TOKEN }}"
+
       - name: Docker Login to Yandex
         run: |
           echo "${YA_REGISTRY_TOKEN}" | docker login -u oauth --password-stdin cr.yandex
