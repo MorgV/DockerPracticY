@@ -14,21 +14,27 @@ env:
 jobs:
   release:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # чтобы получить полный git history для коммитов в changelog
 
       - name: Set version number
         id: version
         run: echo "VERSION=${{ github.run_number }}" >> $GITHUB_ENV
 
+      - name: Install dependencies and run lint & tests
+        run: |
+          npm ci
+          npm run lint
+          npm run test
+
       - name: Setup Docker
         uses: docker/setup-buildx-action@v3
 
       - name: Docker Login to Yandex
-        run: |
-          echo "${YA_REGISTRY_TOKEN}" | docker login -u oauth --password-stdin cr.yandex
-        env:
-          YA_REGISTRY_TOKEN: ${{ secrets.YA_REGISTRY_TOKEN }}
+        run: echo "${{ secrets.YA_REGISTRY_TOKEN }}" | docker login -u oauth --password-stdin cr.yandex
 
       - name: Build Docker Image
         run: |
@@ -40,6 +46,11 @@ jobs:
           docker push $REGISTRY/$IMAGE_NAME:${{ env.VERSION }}
           docker push $REGISTRY/$IMAGE_NAME:${{ env.VERSION }}_latest
 
+      - name: Checkout main branch and pull latest
+        run: |
+          git checkout main
+          git pull origin main
+
       - name: Create Release Branch
         run: |
           git checkout -b releases/${{ env.VERSION }}
@@ -49,11 +60,27 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Update Changelog
+      - name: Get previous tag
+        id: prev_tag
         run: |
-          echo -e "## v${{ env.VERSION }}\n- Release commit\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
+          PREV_TAG=$(git tag --sort=-creatordate | grep -E '^v[0-9]+' | head -n 1)
+          echo "PREV_TAG=$PREV_TAG" >> $GITHUB_ENV
+
+      - name: Generate changelog with commit list
+        run: |
+          if [ -z "$PREV_TAG" ]; then
+            echo "No previous tag found, adding all commits"
+            git log --oneline > changelog_commits.txt
+          else
+            echo "Generating changelog from $PREV_TAG to HEAD"
+            git log $PREV_TAG..HEAD --oneline > changelog_commits.txt
+          fi
+          echo -e "## v${{ env.VERSION }} - $(date +'%Y-%m-%d')\n\n$(cat changelog_commits.txt)\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
+
+      - name: Commit and push changelog and release branch
+        run: |
           git add CHANGELOG.md
-          git commit -m "update changelog"
+          git commit -m "Update changelog for release v${{ env.VERSION }}"
           git push --set-upstream origin releases/${{ env.VERSION }}
 
       - name: Tag Release
@@ -61,14 +88,27 @@ jobs:
           git tag v${{ env.VERSION }}
           git push origin v${{ env.VERSION }}
 
-      - name: Create GitHub Issue
+      - name: Create GitHub Issue for Release
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const prevTag = process.env.PREV_TAG || '';
+            let commits = '';
+            if (prevTag) {
+              const { data } = await github.rest.repos.compareCommits({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                base: prevTag,
+                head: `v${process.env.VERSION}`
+              });
+              commits = data.commits.map(c => `- ${c.commit.message.split('\n')[0]} (${c.sha.substring(0,7)})`).join('\n');
+            } else {
+              commits = "No previous tag found, unable to list commits.";
+            }
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `Release ${{ env.VERSION }}`,
-              body: `Дата: ${new Date().toISOString()}\nАвтор: ${context.actor}\nВерсия: ${{ env.VERSION }}\nОбраз: cr.yandex/${{ env.REGISTRY }}/app:${{ env.VERSION }}`
+              title: `Release ${process.env.VERSION}`,
+              body: `Дата: ${new Date().toISOString()}\nАвтор: ${context.actor}\nВерсия: ${process.env.VERSION}\nОбраз: cr.yandex/${process.env.REGISTRY}/app:${process.env.VERSION}\n\nКоммиты:\n${commits}`
             });
