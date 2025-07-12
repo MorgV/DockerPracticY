@@ -5,6 +5,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 env:
   REGISTRY: cr.yandex/crp7c6dnjn6sbflchmsn
@@ -23,18 +24,11 @@ jobs:
       - name: Setup Docker
         uses: docker/setup-buildx-action@v3
 
-      - name: Check token length
-        run: echo "${{ secrets.YA_REGISTRY_TOKEN }}" | wc -c
-
-      - name: Debug token
-        run: echo "${{ secrets.YA_REGISTRY_TOKEN }}"
-
       - name: Docker Login to Yandex
         run: |
           echo "${YA_REGISTRY_TOKEN}" | docker login -u oauth --password-stdin cr.yandex
         env:
           YA_REGISTRY_TOKEN: ${{ secrets.YA_REGISTRY_TOKEN }}
-        shell: bash
 
       - name: Build Docker Image
         run: |
@@ -49,7 +43,13 @@ jobs:
       - name: Create Release Branch
         run: |
           git checkout -b releases/${{ env.VERSION }}
-          git push origin releases/${{ env.VERSION }}
+
+      - name: Update Changelog
+        run: |
+          echo -e "## v${{ env.VERSION }}\n- Release commit\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
+          git add CHANGELOG.md
+          git commit -m "update changelog"
+          git push --set-upstream origin releases/${{ env.VERSION }}
 
       - name: Tag Release
         run: |
@@ -65,12 +65,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: `Release ${{ env.VERSION }}`,
-              body: `Дата: ${new Date().toISOString()}\nВерсия: ${{ env.VERSION }}\nОбраз: cr.yandex/${{ env.REGISTRY }}/app:${{ env.VERSION }}`
+              body: `Дата: ${new Date().toISOString()}\nАвтор: ${context.actor}\nВерсия: ${{ env.VERSION }}\nОбраз: cr.yandex/${{ env.REGISTRY }}/app:${{ env.VERSION }}`
             });
-
-      - name: Update Changelog
-        run: |
-          echo -e "## v${{ env.VERSION }}\n- Release commit\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
-          git add CHANGELOG.md
-          git commit -m "update changelog"
-          git push
