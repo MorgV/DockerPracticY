@@ -88,6 +88,13 @@ jobs:
           git tag v${{ env.VERSION }}
           git push origin v${{ env.VERSION }}
 
+      - name: Merge release back into main
+        run: |
+          git checkout main
+          git pull origin main
+          git merge --no-ff releases/${{ env.VERSION }} -m "Merge release v${{ env.VERSION }} into main"
+          git push origin main
+
       - name: Create GitHub Issue for Release
         uses: actions/github-script@v7
         with:
