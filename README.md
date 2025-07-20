@@ -1,39 +1,5 @@
 # Домашнее задание ШРИ: Инфраструктура
 
-## 📦 IP и ссылка на приложение
-
-Приложение доступно по адресу:  
-🌍 http://158.160.190.53/hw/store/  
-📡 IP сервера: `158.160.190.53`
-
----
-
-## 🔧 Что сделано
-
-- ✅ Собран Docker-образ приложения
-- ✅ Настроен CI: тесты и линт запускаются на каждый Pull Request
-- ✅ Запрещён пуш в `main`, только PR с проходящими проверками
-- ✅ Добавлены ручные workflows:
-  - создание релиза
-  - фиксы к релизу
-  - деплой релиза на сервер
-- ✅ Образ заливается в Yandex Container Registry
-
----
-
-## ⚙️ Скрипты
-
-### Docker
-
-```bash
-# Сборка Docker-образа
-npm run build:docker
-
-# Запуск Docker-образа на порту 3000
-npm run start:docker
-
-# Домашнее задание ШРИ: Инфраструктура
-
 Вам уже знакомо это прило1жение, вы работали с ним во время выполнения [домашнего задания по автотестам](https://github.com/dima117/testing-homework).
 Теперь вам предстоит добавить в него CI/CD.
 
@@ -146,20 +112,6 @@ https://yandex.cloud/ru/docs/compute/quickstart/quick-create-linux#create-vm
    - [по ssh запускает Docker-образ на виртуальной машине](https://yandex.cloud/ru/docs/container-registry/tutorials/run-docker-on-vm/console#run)
 
    - в Issue добавьте комментарий о том, что релиз выкачен в прод c датой и человеком, который запустил выкатку в прод
-
-## Полезные ссылки
-
-- [GitHub Actions](https://docs.github.com/ru/actions)
-
-  - [Запуск NodeJS](https://docs.github.com/ru/actions/automating-builds-and-tests/building-and-testing-nodejs)
-  - [Ручной запуск](https://docs.github.com/ru/actions/using-workflows/manually-running-a-workflow)
-  - [Создать Issue через CLI](https://docs.github.com/ru/issues/tracking-your-work-with-issues/creating-an-issue#creating-an-issue-with-github-cli)
-
-- [Docker](https://docs.docker.com/)
-  - [Dockerfile](https://docs.docker.com/reference/dockerfile/)
-  - [`docker init`](https://docs.docker.com/reference/cli/docker/init/)
-  - [`docker build`](https://docs.docker.com/reference/cli/docker/image/build/)
-  - [`docker run`](https://docs.docker.com/reference/cli/docker/container/run/)
 
 ## Запуск
 
