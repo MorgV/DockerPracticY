@@ -115,20 +115,6 @@ https://yandex.cloud/ru/docs/compute/quickstart/quick-create-linux#create-vm
 
    - в Issue добавьте комментарий о том, что релиз выкачен в прод c датой и человеком, который запустил выкатку в прод
 
-## Полезные ссылки
-
-- [GitHub Actions](https://docs.github.com/ru/actions)
-
-  - [Запуск NodeJS](https://docs.github.com/ru/actions/automating-builds-and-tests/building-and-testing-nodejs)
-  - [Ручной запуск](https://docs.github.com/ru/actions/using-workflows/manually-running-a-workflow)
-  - [Создать Issue через CLI](https://docs.github.com/ru/issues/tracking-your-work-with-issues/creating-an-issue#creating-an-issue-with-github-cli)
-
-- [Docker](https://docs.docker.com/)
-  - [Dockerfile](https://docs.docker.com/reference/dockerfile/)
-  - [`docker init`](https://docs.docker.com/reference/cli/docker/init/)
-  - [`docker build`](https://docs.docker.com/reference/cli/docker/image/build/)
-  - [`docker run`](https://docs.docker.com/reference/cli/docker/container/run/)
-
 ## Запуск
 
 ```sh
